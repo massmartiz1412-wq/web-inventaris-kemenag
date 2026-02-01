@@ -1,0 +1,7 @@
+{
+  "name": "Sistem Inventaris Pintar",
+  "description": "Aplikasi manajemen inventaris sederhana untuk usaha kecil dengan fitur cek stok harian, pelacakan lokasi, dan status ketersediaan barang dalam Bahasa Indonesia.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
