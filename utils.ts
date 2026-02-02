@@ -18,7 +18,6 @@ export const isCheckDue = (lastCheckedStr: string) => {
   
   // Set time to midnight for comparison to track "day" boundary
   const lastDate = new Date(lastChecked.getFullYear(), lastChecked.getMonth(), lastChecked.getDate());
-  // Fix: changed 'today.getDate()' to 'now.getDate()' because 'today' is currently being declared
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   
   return lastDate < today;
@@ -33,16 +32,4 @@ export const saveToStorage = (data: any) => {
 export const loadFromStorage = () => {
   const data = localStorage.getItem(STORAGE_KEY);
   return data ? JSON.parse(data) : [];
-};
-
-export const exportData = (items: any[]) => {
-  const dataStr = JSON.stringify(items, null, 2);
-  const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-  
-  const exportFileDefaultName = `backup_inventaris_${new Date().toISOString().split('T')[0]}.json`;
-  
-  const linkElement = document.createElement('a');
-  linkElement.setAttribute('href', dataUri);
-  linkElement.setAttribute('download', exportFileDefaultName);
-  linkElement.click();
 };

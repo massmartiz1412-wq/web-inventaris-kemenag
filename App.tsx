@@ -17,11 +17,13 @@ const App: React.FC = () => {
   const [loginError, setLoginError] = useState('');
   const [editingItem, setEditingItem] = useState<Item | null>(null);
 
+  // Initial load
   useEffect(() => {
     const savedItems = loadFromStorage();
     if (savedItems.length > 0) {
       setItems(savedItems);
     } else {
+        // Sample data
         const initialData: Item[] = [
             { id: '1', name: 'Kertas HVS A4', code: 'KH-01', quantity: 50, location: 'Gudang A', lastChecked: new Date().toISOString() },
             { id: '2', name: 'Tinta Epson Hitam', code: 'T-EPS-01', quantity: 3, location: 'Rak 1', lastChecked: new Date(Date.now() - 86400000 * 2).toISOString() },
@@ -35,8 +37,9 @@ const App: React.FC = () => {
     if (auth === 'true') setIsLoggedIn(true);
   }, []);
 
+  // Persistent storage sync
   useEffect(() => {
-    if (items.length >= 0) {
+    if (items.length > 0) {
       saveToStorage(items);
     }
   }, [items]);
@@ -59,6 +62,7 @@ const App: React.FC = () => {
 
   const addItem = (newItemData: Omit<Item, 'id' | 'lastChecked'>) => {
     if (editingItem) {
+      // Update existing
       setItems(items.map(item => 
         item.id === editingItem.id 
           ? { ...item, ...newItemData } 
@@ -66,6 +70,7 @@ const App: React.FC = () => {
       ));
       setEditingItem(null);
     } else {
+      // Create new
       const item: Item = {
         ...newItemData,
         id: crypto.randomUUID(),
@@ -86,34 +91,18 @@ const App: React.FC = () => {
     }));
   };
 
-  const checkItem = (id: string | string[]) => {
-    const idsToCheck = Array.isArray(id) ? id : [id];
+  const checkItem = (id: string) => {
     setItems(items.map(item => 
-      idsToCheck.includes(item.id) 
+      item.id === id 
         ? { ...item, lastChecked: new Date().toISOString() } 
         : item
     ));
   };
 
-  const deleteItem = (id: string | string[]) => {
-    const idsToDelete = Array.isArray(id) ? id : [id];
-    setItems(items.filter(item => !idsToDelete.includes(item.id)));
-  };
-
-  const handleImport = (newItems: Item[]) => {
-    // Basic deduplication by code or ID
-    const existingCodes = new Set(items.map(i => i.code));
-    const uniqueNewItems = newItems.filter(i => !existingCodes.has(i.code));
-    
-    // Generate new UUIDs for safety during import if they collide, 
-    // but usually we trust the backup
-    const processedItems = uniqueNewItems.map(item => ({
-      ...item,
-      id: item.id || crypto.randomUUID(),
-      lastChecked: item.lastChecked || new Date().toISOString()
-    }));
-
-    setItems([...items, ...processedItems]);
+  const deleteItem = (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus barang ini?')) {
+      setItems(items.filter(item => item.id !== id));
+    }
   };
 
   const startEditing = (item: Item) => {
@@ -182,7 +171,7 @@ const App: React.FC = () => {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-          {activeView === 'dashboard' && <Dashboard items={items} onImport={handleImport} />}
+          {activeView === 'dashboard' && <Dashboard items={items} />}
           {activeView === 'inventory' && (
             <InventoryList 
               items={items} 
@@ -213,6 +202,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
+      {/* Quick Action FAB for mobile if needed */}
       <button 
         onClick={() => {
           setEditingItem(null);

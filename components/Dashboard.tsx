@@ -1,18 +1,15 @@
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Package, AlertTriangle, CheckCircle2, Download, Upload, Database, ShieldCheck } from 'lucide-react';
+import { Package, AlertTriangle, CheckCircle2, MapPin } from 'lucide-react';
 import { Item } from '../types';
-import { isCheckDue, exportData } from '../utils';
+import { isCheckDue } from '../utils';
 
 interface DashboardProps {
   items: Item[];
-  onImport: (items: Item[]) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ items, onImport }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
+const Dashboard: React.FC<DashboardProps> = ({ items }) => {
   const totalItems = items.length;
   const outOfStock = items.filter(i => i.quantity === 0).length;
   const needCheck = items.filter(i => isCheckDue(i.lastChecked)).length;
@@ -30,56 +27,11 @@ const Dashboard: React.FC<DashboardProps> = ({ items, onImport }) => {
     { label: 'Stok Rendah', value: lowStock, icon: AlertTriangle, color: 'text-indigo-600', bg: 'bg-indigo-50' },
   ];
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const importedItems = JSON.parse(event.target?.result as string);
-          if (Array.isArray(importedItems)) {
-            if (confirm(`Impor ${importedItems.length} barang? Tindakan ini akan menambah data yang sudah ada.`)) {
-              onImport(importedItems);
-            }
-          } else {
-            alert('Format file tidak valid.');
-          }
-        } catch (err) {
-          alert('Gagal membaca file backup.');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
   return (
     <div className="space-y-6">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Ringkasan Inventaris</h1>
-          <p className="text-slate-500">Selamat datang kembali, admin.</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button 
-            onClick={() => exportData(items)}
-            className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
-          >
-            <Download className="h-4 w-4 mr-2 text-indigo-500" /> Ekspor JSON
-          </button>
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all shadow-md"
-          >
-            <Upload className="h-4 w-4 mr-2" /> Impor Backup
-          </button>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleImport} 
-            accept=".json" 
-            className="hidden" 
-          />
-        </div>
+      <header>
+        <h1 className="text-2xl font-bold text-slate-800">Ringkasan Inventaris</h1>
+        <p className="text-slate-500">Selamat datang kembali, admin.</p>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -119,27 +71,16 @@ const Dashboard: React.FC<DashboardProps> = ({ items, onImport }) => {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
-              <ShieldCheck className="h-5 w-5 mr-2 text-indigo-500" /> Status Keamanan
-            </h3>
-            <div className="space-y-4">
-              <div className={`p-4 rounded-xl border ${needCheck > 0 ? 'bg-amber-50 border-amber-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                  <p className={`text-sm font-bold ${needCheck > 0 ? 'text-amber-800' : 'text-emerald-800'}`}>
-                    {needCheck > 0 ? 'Tindakan Diperlukan' : 'Data Terverifikasi'}
-                  </p>
-                  <p className={`text-xs mt-1 ${needCheck > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                    {needCheck > 0 ? `${needCheck} barang melewati jadwal cek harian.` : 'Semua barang telah dicek hari ini.'}
-                  </p>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Database</p>
-                  <p className="text-sm font-bold text-slate-700">Lokal (Browser)</p>
-                </div>
-                <Database className="h-5 w-5 text-slate-300" />
-              </div>
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Aksi Cepat</h3>
+          <div className="space-y-4 flex-1">
+            <div className="p-4 border border-indigo-100 bg-indigo-50/50 rounded-lg">
+                <p className="text-sm text-indigo-800 font-medium">Pengingat Harian</p>
+                <p className="text-xs text-indigo-600 mt-1">Ada {needCheck} barang yang belum diperiksa hari ini.</p>
+            </div>
+            <div className="p-4 border border-red-100 bg-red-50/50 rounded-lg">
+                <p className="text-sm text-red-800 font-medium">Stok Menipis</p>
+                <p className="text-xs text-red-600 mt-1">Periksa {lowStock} barang dengan stok di bawah 5.</p>
             </div>
           </div>
         </div>

@@ -1,21 +1,19 @@
 
 import React, { useState } from 'react';
-import { Search, MapPin, CheckCircle, AlertCircle, Edit, Trash2, Package, Check, X, Image as ImageIcon, Plus, Minus, Clock, QrCode, Square, CheckSquare, Trash } from 'lucide-react';
+import { Search, MapPin, CheckCircle, AlertCircle, Edit, Trash2, Package, Check, X, Image as ImageIcon, Plus, Minus, Clock } from 'lucide-react';
 import { Item } from '../types';
 import { formatDate, isCheckDue } from '../utils';
 
 interface InventoryListProps {
   items: Item[];
-  onCheck: (id: string | string[]) => void;
-  onDelete: (id: string | string[]) => void;
+  onCheck: (id: string) => void;
+  onDelete: (id: string) => void;
   onEdit: (item: Item) => void;
   onUpdateQuantity: (id: string, amount: number) => void;
 }
 
 const InventoryList: React.FC<InventoryListProps> = ({ items, onCheck, onDelete, onEdit, onUpdateQuantity }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [showQrModal, setShowQrModal] = useState<Item | null>(null);
 
   const filteredItems = items.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -23,34 +21,8 @@ const InventoryList: React.FC<InventoryListProps> = ({ items, onCheck, onDelete,
     item.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredItems.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredItems.map(i => i.id));
-    }
-  };
-
-  const handleBulkDelete = () => {
-    if (confirm(`Hapus ${selectedIds.length} barang yang terpilih?`)) {
-      onDelete(selectedIds);
-      setSelectedIds([]);
-    }
-  };
-
-  const handleBulkCheck = () => {
-    onCheck(selectedIds);
-    setSelectedIds([]);
-  };
-
   return (
-    <div className="space-y-4 relative">
+    <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Daftar Inventaris</h2>
@@ -68,50 +40,16 @@ const InventoryList: React.FC<InventoryListProps> = ({ items, onCheck, onDelete,
         </div>
       </div>
 
-      {/* Bulk Action Toolbar */}
-      {selectedIds.length > 0 && (
-        <div className="bg-indigo-600 text-white px-6 py-3 rounded-2xl shadow-lg flex items-center justify-between animate-in slide-in-from-top-4 duration-300">
-          <div className="flex items-center space-x-4">
-            <span className="font-bold">{selectedIds.length} Barang Terpilih</span>
-            <div className="h-4 w-px bg-indigo-400"></div>
-            <button 
-              onClick={handleBulkCheck}
-              className="flex items-center text-sm font-semibold hover:text-indigo-100 transition-colors"
-            >
-              <CheckCircle className="h-4 w-4 mr-1.5" /> Konfirmasi Cek
-            </button>
-            <button 
-              onClick={handleBulkDelete}
-              className="flex items-center text-sm font-semibold hover:text-red-200 text-red-100 transition-colors"
-            >
-              <Trash className="h-4 w-4 mr-1.5" /> Hapus Terpilih
-            </button>
-          </div>
-          <button onClick={() => setSelectedIds([])} className="text-indigo-200 hover:text-white">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      )}
-
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-6 py-4 text-left">
-                <button onClick={toggleSelectAll} className="text-slate-400 hover:text-indigo-600 transition-colors">
-                  {selectedIds.length === filteredItems.length && filteredItems.length > 0 ? (
-                    <CheckSquare className="h-5 w-5 text-indigo-600" />
-                  ) : (
-                    <Square className="h-5 w-5" />
-                  )}
-                </button>
-              </th>
               <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Barang</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Stok</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lokasi</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cek Terakhir</th>
-              <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Aksi</th>
+              <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Aksi Cepat</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
@@ -119,15 +57,9 @@ const InventoryList: React.FC<InventoryListProps> = ({ items, onCheck, onDelete,
               filteredItems.map((item) => {
                 const checkDue = isCheckDue(item.lastChecked);
                 const isAvailable = item.quantity > 0;
-                const isSelected = selectedIds.includes(item.id);
                 
                 return (
-                  <tr key={item.id} className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-indigo-50/30' : ''} ${checkDue ? 'bg-amber-50/10' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                       <button onClick={() => toggleSelect(item.id)} className={`${isSelected ? 'text-indigo-600' : 'text-slate-300'}`}>
-                        {isSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
-                      </button>
-                    </td>
+                  <tr key={item.id} className={`hover:bg-slate-50/80 transition-colors ${checkDue ? 'bg-amber-50/10' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-3">
                         <div className="h-12 w-12 flex-shrink-0 rounded-xl bg-slate-100 overflow-hidden border border-slate-200 flex items-center justify-center shadow-sm">
@@ -161,22 +93,32 @@ const InventoryList: React.FC<InventoryListProps> = ({ items, onCheck, onDelete,
                         <button 
                           onClick={() => onUpdateQuantity(item.id, -1)}
                           className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-100 hover:text-red-600 text-slate-600 transition-all active:scale-90"
+                          title="Kurangi Stok"
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-w-[3.5rem] text-center font-black">
-                          {item.quantity}
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 min-w-[3.5rem] text-center">
+                           <span className={`text-sm font-black ${
+                            item.quantity === 0 
+                              ? 'text-red-600' 
+                              : item.quantity < 5 
+                                ? 'text-amber-600' 
+                                : 'text-slate-800'
+                          }`}>
+                            {item.quantity}
+                          </span>
                         </div>
                         <button 
                           onClick={() => onUpdateQuantity(item.id, 1)}
                           className="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-100 hover:text-emerald-600 text-slate-600 transition-all active:scale-90"
+                          title="Tambah Stok"
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">
-                      <div className="flex items-center">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm font-medium text-slate-600">
                         <MapPin className="h-4 w-4 mr-1.5 text-indigo-400" />
                         {item.location}
                       </div>
@@ -187,33 +129,56 @@ const InventoryList: React.FC<InventoryListProps> = ({ items, onCheck, onDelete,
                           <Clock className="h-3 w-3 mr-1 text-slate-400" />
                           {formatDate(item.lastChecked)}
                         </div>
-                        {checkDue && (
+                        {checkDue ? (
                           <span className="text-[10px] text-amber-600 font-black flex items-center mt-1 uppercase tracking-tighter animate-pulse">
-                            <AlertCircle className="h-3 w-3 mr-1" /> Perlu Dicek
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Perlu Dicek Hari Ini
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-emerald-600 font-black flex items-center mt-1 uppercase tracking-tighter">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Selesai Dicek
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center space-x-2">
-                        <button 
-                          onClick={() => setShowQrModal(item)}
-                          title="Generate QR Code"
-                          className="p-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white transition-all"
-                        >
-                          <QrCode className="h-4 w-4" />
-                        </button>
+                      <div className="flex items-center justify-center space-x-3">
+                        {/* Tombol Cek (Aktif Selalu) */}
                         <button 
                           onClick={() => onCheck(item.id)}
-                          className={`p-2 rounded-lg transition-all ${checkDue ? 'bg-indigo-600 text-white' : 'bg-emerald-50 text-emerald-600'}`}
+                          title={checkDue ? "Lakukan Pengecekan Sekarang" : "Update Waktu Pengecekan"}
+                          className={`group relative p-2.5 rounded-xl border shadow-sm transition-all transform active:scale-90 ${
+                            checkDue 
+                              ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100' 
+                              : 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100'
+                          }`}
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          <CheckCircle className={`h-5 w-5 ${checkDue ? 'animate-bounce' : ''}`} />
+                          {checkDue && (
+                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                            </span>
+                          )}
                         </button>
-                        <button onClick={() => onEdit(item)} className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all">
-                          <Edit className="h-4 w-4" />
+                        
+                        {/* Tombol Edit */}
+                        <button 
+                          onClick={() => onEdit(item)}
+                          title="Edit Detail Barang"
+                          className="p-2.5 rounded-xl border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-sm"
+                        >
+                          <Edit className="h-5 w-5" />
                         </button>
-                        <button onClick={() => onDelete(item.id)} className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-all">
-                          <Trash2 className="h-4 w-4" />
+
+                        {/* Tombol Hapus */}
+                        <button 
+                          onClick={() => onDelete(item.id)}
+                          title="Hapus Barang Permanen"
+                          className="p-2.5 rounded-xl border border-red-200 bg-red-50 text-red-500 hover:bg-red-600 hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-sm"
+                        >
+                          <Trash2 className="h-5 w-5" />
                         </button>
                       </div>
                     </td>
@@ -222,10 +187,13 @@ const InventoryList: React.FC<InventoryListProps> = ({ items, onCheck, onDelete,
               })
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-20 text-center">
-                   <div className="flex flex-col items-center justify-center">
-                    <Package className="h-12 w-12 text-slate-200 mb-2" />
-                    <p className="text-slate-500 font-medium">Data tidak ditemukan</p>
+                <td colSpan={6} className="px-6 py-20 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="bg-slate-50 p-6 rounded-full mb-4">
+                      <Package className="h-12 w-12 text-slate-200" />
+                    </div>
+                    <p className="text-slate-500 font-medium">Data barang tidak ditemukan</p>
+                    <p className="text-slate-400 text-sm mt-1">Coba gunakan kata kunci pencarian yang berbeda.</p>
                   </div>
                 </td>
               </tr>
@@ -233,37 +201,12 @@ const InventoryList: React.FC<InventoryListProps> = ({ items, onCheck, onDelete,
           </tbody>
         </table>
       </div>
-
-      {/* QR Modal */}
-      {showQrModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-300 text-center relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
-             <button onClick={() => setShowQrModal(null)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-colors">
-              <X className="h-5 w-5" />
-            </button>
-            
-            <h3 className="text-2xl font-black text-slate-800 mb-2">{showQrModal.name}</h3>
-            <p className="text-indigo-600 font-mono font-bold mb-8 uppercase tracking-widest">{showQrModal.code}</p>
-            
-            <div className="bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-100 flex justify-center mb-8">
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(showQrModal.code)}`} 
-                alt="QR Code"
-                className="w-48 h-48 rounded-xl shadow-lg"
-              />
-            </div>
-            
-            <button 
-              onClick={() => window.print()}
-              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl active:scale-95"
-            >
-              Cetak Label
-            </button>
-            <p className="text-slate-400 text-[10px] mt-4 font-bold uppercase tracking-widest">Gunakan label ini untuk identifikasi fisik</p>
-          </div>
-        </div>
-      )}
+      <div className="flex justify-between items-center text-xs text-slate-400 px-2">
+        <p>Menampilkan {filteredItems.length} dari {items.length} total barang</p>
+        <p className="flex items-center italic">
+          <Clock className="h-3 w-3 mr-1" /> Data tersimpan secara lokal di peramban Anda
+        </p>
+      </div>
     </div>
   );
 };
